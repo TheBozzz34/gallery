@@ -38,6 +38,7 @@ export function usePhotoUpload({
   const handleUpload = async (file: File) => {
     try {
       setIsUploading(true);
+      setUploadProgress(0);
       const [exifData, imageInfo] = await Promise.all([
         getPhotoExif(file),
         getImageInfo(file),

@@ -27,7 +27,10 @@ import { useTRPC } from "@/trpc/client";
 import { useForm } from "react-hook-form";
 import { photosInsertSchema } from "@/db/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useGetAddress } from "@/modules/mapbox/hooks/use-get-address";
+import {
+  getPrimaryAddressFeature,
+  useGetAddress,
+} from "@/modules/mapbox/hooks/use-get-address";
 import type { TExifData, TImageInfo } from "@/modules/photos/lib/utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { keyToUrl } from "@/modules/s3/lib/key-to-url";
@@ -69,6 +72,7 @@ export function PhotoForm({
     lat: currentLocation.lat,
     lng: currentLocation.lng,
   });
+  const primaryAddressFeature = getPrimaryAddressFeature(address);
 
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -129,19 +133,20 @@ export function PhotoForm({
   const onSubmit = (values: z.infer<typeof photosInsertSchema>) => {
     const formData = {
       ...values,
-      country: address?.features[0].properties.context.country?.name,
+      country: primaryAddressFeature?.properties.context.country?.name,
       countryCode:
-        address?.features[0].properties.context.country?.country_code,
-      region: address?.features[0].properties.context.region?.name,
+        primaryAddressFeature?.properties.context.country?.country_code,
+      region: primaryAddressFeature?.properties.context.region?.name,
       city:
-        address?.features[0].properties.context.country?.country_code ===
+        primaryAddressFeature?.properties.context.country?.country_code ===
           "JP" ||
-        address?.features[0].properties.context.country?.country_code === "TW"
-          ? address?.features[0].properties.context.region?.name
-          : address?.features[0].properties.context.place?.name,
-      district: address?.features[0].properties.context.locality?.name,
-      fullAddress: address?.features[0].properties.full_address,
-      placeFormatted: address?.features[0].properties.place_formatted,
+        primaryAddressFeature?.properties.context.country?.country_code ===
+          "TW"
+          ? primaryAddressFeature?.properties.context.region?.name
+          : primaryAddressFeature?.properties.context.place?.name,
+      district: primaryAddressFeature?.properties.context.locality?.name,
+      fullAddress: primaryAddressFeature?.properties.full_address,
+      placeFormatted: primaryAddressFeature?.properties.place_formatted,
     };
 
     createPhoto.mutate(formData);
@@ -245,7 +250,7 @@ export function PhotoForm({
                 </div>
               </FormControl>
               <FormDescription>
-                {address?.features?.[0]?.properties?.full_address}
+                {primaryAddressFeature?.properties.full_address}
               </FormDescription>
             </FormItem>
 

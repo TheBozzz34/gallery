@@ -5,7 +5,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { TExifData, TImageInfo } from "@/modules/photos/lib/utils";
 import { PhotoFormData, INITIAL_FORM_VALUES, STEP_CONFIG } from "./types";
-import type { AddressData } from "@/modules/mapbox/hooks/use-get-address";
+import {
+  type AddressData,
+  getPrimaryAddressFeature,
+} from "@/modules/mapbox/hooks/use-get-address";
 import { FirstStep } from "./steps/first-step";
 import { SecondStep } from "./steps/second-step";
 import { ThirdStep } from "./steps/third-step";
@@ -117,6 +120,8 @@ export default function MultiStepForm({
       // Move to next step
       setStep(step + 1);
     } else {
+      const primaryAddressFeature = getPrimaryAddressFeature(address);
+
       // Final submission - integrate all data including address and image info
       const finalData = {
         ...updatedData,
@@ -129,20 +134,20 @@ export default function MultiStepForm({
         height: imageInfo?.height || 0,
         blurData: imageInfo?.blurhash || "",
         // Add address data from geocoding if available
-        country: address?.features?.[0]?.properties?.context?.country?.name,
+        country: primaryAddressFeature?.properties?.context?.country?.name,
         countryCode:
-          address?.features?.[0]?.properties?.context?.country?.country_code,
-        region: address?.features?.[0]?.properties?.context?.region?.name,
+          primaryAddressFeature?.properties?.context?.country?.country_code,
+        region: primaryAddressFeature?.properties?.context?.region?.name,
         city:
-          address?.features?.[0]?.properties?.context?.country?.country_code ===
+          primaryAddressFeature?.properties?.context?.country?.country_code ===
             "JP" ||
-          address?.features?.[0]?.properties?.context?.country?.country_code ===
+          primaryAddressFeature?.properties?.context?.country?.country_code ===
             "TW"
-            ? address?.features?.[0]?.properties?.context?.region?.name
-            : address?.features?.[0]?.properties?.context?.place?.name,
-        district: address?.features?.[0]?.properties?.context?.locality?.name,
-        fullAddress: address?.features?.[0]?.properties?.full_address,
-        placeFormatted: address?.features?.[0]?.properties?.place_formatted,
+            ? primaryAddressFeature?.properties?.context?.region?.name
+            : primaryAddressFeature?.properties?.context?.place?.name,
+        district: primaryAddressFeature?.properties?.context?.locality?.name,
+        fullAddress: primaryAddressFeature?.properties?.full_address,
+        placeFormatted: primaryAddressFeature?.properties?.place_formatted,
       };
 
       setIsSubmitting(true);

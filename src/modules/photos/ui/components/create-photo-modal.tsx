@@ -10,7 +10,11 @@ const CreatePhotoModal = () => {
   return (
     <ResponsiveModal
       open={isOpen}
-      onOpenChange={onClose}
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
       title="Create Photo"
       className="sm:max-w-3xl"
       dismissible={false}

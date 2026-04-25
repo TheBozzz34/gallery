@@ -6,10 +6,13 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, ArrowLeft, X, MapPin } from "lucide-react";
 import { Form, FormControl, FormItem, FormLabel } from "@/components/ui/form";
 import { thirdStepSchema, StepProps, ThirdStepData } from "../types";
-import type { AddressData } from "@/modules/mapbox/hooks/use-get-address";
+import {
+  type AddressData,
+  getPrimaryAddressFeature,
+  useGetAddress,
+} from "@/modules/mapbox/hooks/use-get-address";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatGPSCoordinates } from "@/lib/utils";
-import { useGetAddress } from "@/modules/mapbox/hooks/use-get-address";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -48,11 +51,9 @@ export function ThirdStep({
   isSubmitting,
   onAddressUpdate,
 }: ThirdStepProps) {
-  // Get initial coordinates from EXIF data or form data
   const initialLongitude = initialData?.longitude ?? 0;
   const initialLatitude = initialData?.latitude ?? 0;
 
-  // Manage current location state
   const [currentLocation, setCurrentLocation] = useState<{
     lat: number;
     lng: number;
@@ -61,7 +62,6 @@ export function ThirdStep({
     lng: initialLongitude || 0,
   });
 
-  // Search state
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -79,20 +79,18 @@ export function ThirdStep({
   const { handleSubmit, formState } = form;
   const { isValid } = formState;
 
-  // Get address from coordinates using the hook
   const { data: addressData } = useGetAddress({
     lat: currentLocation.lat,
     lng: currentLocation.lng,
   });
+  const primaryAddressFeature = getPrimaryAddressFeature(addressData);
 
-  // Update parent component when address data changes
   useEffect(() => {
     if (addressData && onAddressUpdate) {
       onAddressUpdate(addressData);
     }
   }, [addressData, onAddressUpdate]);
 
-  // Search for places
   const handleSearch = useCallback(async () => {
     if (!searchQuery.trim()) return;
 
@@ -118,7 +116,6 @@ export function ThirdStep({
     }
   }, [searchQuery]);
 
-  // Auto-search when query changes (with debounce)
   useEffect(() => {
     if (!searchQuery.trim()) {
       setSearchResults([]);
@@ -127,12 +124,11 @@ export function ThirdStep({
 
     const debounceTimer = setTimeout(() => {
       handleSearch();
-    }, 500); // 500ms delay
+    }, 500);
 
     return () => clearTimeout(debounceTimer);
   }, [searchQuery, handleSearch]);
 
-  // Handle selecting a search result
   const handleSelectLocation = (result: SearchResult) => {
     const [lng, lat] = result.geometry.coordinates;
     setCurrentLocation({ lat, lng });
@@ -143,7 +139,6 @@ export function ThirdStep({
     setSearchResults([]);
   };
 
-  // Memoize map values to reduce re-renders
   const mapValues = useMemo(() => {
     const longitude = currentLocation.lng || initialLongitude;
     const latitude = currentLocation.lat || initialLatitude;
@@ -160,7 +155,7 @@ export function ThirdStep({
               },
             ],
       viewState: {
-        longitude: longitude || -122.4, // Default to San Francisco
+        longitude: longitude || -122.4,
         latitude: latitude || 37.8,
         zoom: longitude === 0 && latitude === 0 ? 2 : 10,
       },
@@ -173,7 +168,6 @@ export function ThirdStep({
   ]);
 
   const onSubmit = (data: ThirdStepData) => {
-    // Include current location in submitted data
     onNext({
       ...data,
       latitude: currentLocation.lat || initialLatitude,
@@ -186,7 +180,6 @@ export function ThirdStep({
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <FormItem>
           <FormLabel>Search for a place</FormLabel>
-          {/* Search Input */}
           <div className="relative mb-2">
             <ButtonGroup>
               <Input
@@ -204,24 +197,23 @@ export function ThirdStep({
               </Button>
             </ButtonGroup>
 
-            {/* Search Results */}
             {searchResults.length > 0 && (
-              <Card className="absolute z-10 w-full mt-1 p-0 shadow-lg">
+              <Card className="absolute z-10 mt-1 w-full p-0 shadow-lg">
                 <ScrollArea className="h-[200px]">
                   <div className="p-0">
                     {searchResults.map((result, index) => (
                       <button
                         key={index}
                         type="button"
-                        className="w-full text-left px-4 py-2 hover:bg-accent transition-colors flex items-start gap-2 border-b last:border-b-0"
+                        className="flex w-full items-start gap-2 border-b px-4 py-2 text-left transition-colors last:border-b-0 hover:bg-accent"
                         onClick={() => handleSelectLocation(result)}
                       >
-                        <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">
+                        <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium">
                             {result.properties.name}
                           </p>
-                          <p className="text-xs text-muted-foreground truncate">
+                          <p className="truncate text-xs text-muted-foreground">
                             {result.properties.place_formatted}
                           </p>
                         </div>
@@ -234,7 +226,7 @@ export function ThirdStep({
           </div>
 
           <FormControl>
-            <div className="h-[400px] w-full rounded-md border overflow-hidden">
+            <div className="h-[400px] w-full overflow-hidden rounded-md border">
               <MapboxComponent
                 draggableMarker
                 markers={mapValues.markers}
@@ -249,8 +241,7 @@ export function ThirdStep({
             </div>
           </FormControl>
 
-          {/* Address Display */}
-          <div className="space-y-1 text-sm text-muted-foreground mt-2">
+          <div className="mt-2 space-y-1 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <MapPin className="h-3 w-3" />
               <span className="text-xs">
@@ -262,9 +253,9 @@ export function ThirdStep({
                   : "Drag the marker to set location"}
               </span>
             </div>
-            {addressData?.features?.[0] && (
+            {primaryAddressFeature && (
               <div className="text-xs">
-                📍 {addressData.features[0].properties.place_formatted}
+                Location: {primaryAddressFeature.properties.place_formatted}
               </div>
             )}
           </div>

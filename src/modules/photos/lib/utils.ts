@@ -1,4 +1,3 @@
-import { ExifParserFactory } from "ts-exif-parser";
 import * as exifr from "exifr";
 import { encode } from "blurhash";
 
@@ -186,27 +185,26 @@ const loadImage = async (file: File): Promise<HTMLImageElement> => {
  * @param file Photo file
  * @returns EXIF data.(make, model, etc.)
  */
-export async function getPhotoExif(file: File) {
+export async function getPhotoExif(file: File): Promise<TExifData | null> {
   try {
-    const exif = await exifr.parse(file, {
-      tiff: true,
-      ifd0: true,
-      exif: true,
-      gps: true,
-    });
+    const exif = await exifr.parse(file);
 
     if (!exif) return null;
 
     return {
-      camera: exif.Make && exif.Model ? `${exif.Make} ${exif.Model}` : null,
-      lens: exif.LensModel ?? null,
-      focalLength: exif.FocalLength ?? null,
-      aperture: exif.FNumber ?? null,
-      shutterSpeed: exif.ExposureTime ?? null,
-      iso: exif.ISO ?? null,
-      takenAt: exif.DateTimeOriginal ?? null,
-      latitude: exif.latitude ?? null,
-      longitude: exif.longitude ?? null,
+      make: exif.Make ?? undefined,
+      model: exif.Model ?? undefined,
+      lensModel: exif.LensModel ?? undefined,
+      focalLength: exif.FocalLength ?? undefined,
+      focalLength35mm: exif.FocalLengthIn35mmFormat ?? undefined,
+      fNumber: exif.FNumber ?? undefined,
+      iso: exif.ISO ?? undefined,
+      exposureTime: exif.ExposureTime ?? undefined,
+      exposureCompensation: exif.ExposureCompensation ?? undefined,
+      latitude: exif.latitude ?? undefined,
+      longitude: exif.longitude ?? undefined,
+      gpsAltitude: exif.GPSAltitude ?? undefined,
+      dateTimeOriginal: exif.DateTimeOriginal ?? undefined,
     };
   } catch (error) {
     console.warn("Error reading EXIF data:", error);
