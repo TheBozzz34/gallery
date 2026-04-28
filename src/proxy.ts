@@ -1,4 +1,3 @@
-import { headers } from "next/headers";
 import { auth } from "./modules/auth/lib/auth";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
@@ -6,7 +5,7 @@ import type { NextRequest } from "next/server";
 // This function can be marked `async` if using `await` inside
 export async function proxy(request: NextRequest) {
   const session = await auth.api.getSession({
-    headers: await headers(),
+    headers: request.headers,
   });
 
   if (!session) {

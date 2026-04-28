@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "node .next/standalone/server.js",
     "db:push": "bunx drizzle-kit push --config drizzle.config.ts",
     "db:studio": "bunx drizzle-kit studio",
     "seed:user": "bun tsx scripts/seed-user.ts",

@@ -15,15 +15,17 @@ import {
 
 const page = async () => {
   const queryClient = getQueryClient();
-  void queryClient.prefetchQuery(
-    trpc.dashboard.getPhotosCountByMonth.queryOptions({ years: 3 })
-  );
-  void queryClient.prefetchQuery(
-    trpc.dashboard.getVisitedCountriesWithGeoJson.queryOptions()
-  );
-  void queryClient.prefetchQuery(
-    trpc.dashboard.getDashboardStats.queryOptions()
-  );
+  await Promise.all([
+    queryClient.prefetchQuery(
+      trpc.dashboard.getPhotosCountByMonth.queryOptions({ years: 3 })
+    ),
+    queryClient.prefetchQuery(
+      trpc.dashboard.getVisitedCountriesWithGeoJson.queryOptions()
+    ),
+    queryClient.prefetchQuery(
+      trpc.dashboard.getDashboardStats.queryOptions()
+    ),
+  ]);
 
   return (
     <div className="py-4 px-4 md:px-8 flex flex-col">
